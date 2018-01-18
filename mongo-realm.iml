@@ -18,7 +18,7 @@
     <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-annotations-api:7.0.42" level="project" />
     <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-api:7.0.42" level="project" />
     <orderEntry type="library" name="Maven: org.apache.tomcat:tomcat-util:7.0.42" level="project" />
-    <orderEntry type="library" name="Maven: org.mongodb:mongo-java-driver:2.11.3" level="project" />
+    <orderEntry type="library" name="Maven: org.mongodb:mongo-java-driver:3.6.1" level="project" />
   </component>
 </module>
 
