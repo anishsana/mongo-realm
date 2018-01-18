@@ -7,29 +7,25 @@ import org.apache.catalina.realm.RealmBase;
 
 import java.net.UnknownHostException;
 import java.security.Principal;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.text.Format;
 import java.util.ArrayList;
 import java.util.Iterator;
 
 public class MongoRealm extends RealmBase {
 
 
-    protected String mongoClientURI = "mongodb://localhost/";
+    protected String mongoClientURI;
 
-    protected String database = "security_realm";
+    protected String database;
 
-    protected String userCollection = "user";
+    protected String userCollection;
 
-    protected String usernameField = "username";
+    protected String usernameField;
 
-    protected String credentialsField = "credentials";
+    protected String credentialsField;
 
-    protected String rolesField = "roles";
+    protected String rolesField;
 
-    protected String roleNameField = "name";
+    protected String roleNameField;
 
     protected static MongoClient mongoClient = null;
 
@@ -184,11 +180,12 @@ public class MongoRealm extends RealmBase {
     }
 
     private DB openMongoDB() throws UnknownHostException {
-
+    	MongoClientURI uri = new MongoClientURI(getMongoClientURI());
         if (mongoClient == null) {
-            mongoClient = new MongoClient(new MongoClientURI(getMongoClientURI()));
+            mongoClient = new MongoClient(uri);
+            return mongoClient.getDB(uri.getDatabase());
         }
-        return mongoClient.getDB(getDatabase());
+        return mongoClient.getDB(uri.getDatabase());
     }
 
 
@@ -246,7 +243,7 @@ public class MongoRealm extends RealmBase {
 
         try {
 
-            DB db = openMongoDB();
+        	DB db = openMongoDB();
             DBCollection userCol = db.getCollection(userCollection);
             BasicDBObject query = new BasicDBObject(usernameField, username);
             DBObject userObj = userCol.findOne(query);
