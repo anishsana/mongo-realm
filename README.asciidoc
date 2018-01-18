@@ -1,16 +1,20 @@
-This is a Tomcat/TomEE Security Realm designed to work with MongoDB.  For more information about TomEE, see http://tomee.apache.org or http://www.tomitribe.com.
+This is a Tomcat/TomEE Security Realm designed to work with MongoDB.  For more information about TomEE, see http://tomee.apache.org.
+
+_Note - This project was a fork of the https://github.com/tobrien/mongo-realm[original project]. The original project has not been updated since 2013, due to which the fork was separated as its own project and updated._
 
 == Using this Realm
 
 To use this Realm, you'll need to do a few things:
 
 1. Clone this Git repository and build the realm
-2. Copy both the Realm's JAR and the Mongo Java Client to your $TOMCAT_HOME/lib directory.
+2. Copy both the Realm's JAR and the Mongo Java Client to your $TOMCAT_HOME/lib directory. _If you used Maven to build this Realm, this file should be in ~/.m2/repository/org/mongodb/mongo-java-driver/3.6.1/mongo-java-driver-3.6.1.jar._
 3. Create and populate the appropriate database and collection in Mongo.
 
 == Creating the Appropriate Collections in MongoDB
 
-The default database name for this Realm is "security_realm".  The default user collection is name "user".  The Realm will then attempt to locate a digested password in the "credentials" field of the "user" object.  To gather roles, this Realm will then expect to find an array of objects under "roles" with a "name" attribute on each object defining the role.
+Create a database "security_realm" for this Realm with the collection "user" to store all users.  The Realm will then attempt to locate a password _(can be digested if required)_ in the "credentials" field of the "user" object.  To gather roles, this Realm will then expect to find an array of objects under "roles" with a "name" attribute on each object defining the role.
+
+_You don't have to name your keys as specified above. For instance, feel free to name your database "auth_user" instead of "security_realm"._
 
 To create the necessary collection and populate a single user, run this command:
 
@@ -19,24 +23,33 @@ To create the necessary collection and populate a single user, run this command:
 > db.user.insert( { username: "tomee", credentials: "4c6a855adfb64104b6ba85cb3c8823b79302f2f25f33d5a27d51b800393e5cc6", roles: [ { name: "tomee" } ] } );
 ----
 
-This will create a single user "tomee" with the password "tomee" and a single role "tomee".  The credentials is a SHA-256 hash of the password "tomee".
+This will create a single user "tomee" with the password "tomee" and a single role "tomee".  The credentials are a SHA-256 hash of the password "tomee".
+
+Sample structure of the document in your collection -
+
+----
+{
+    "_id": {
+        "$oid": "5b61bf45682d155g753951ed"
+    },
+    "username": "tomee",
+    "credentials": "4c6a855adfb64104b6ba85cb3c8823b79302f2f25f33d5a27d51b800393e5cc6",
+    "roles": [
+        {
+            "name": "tomee"
+        }
+    ]
+}
+----
 
 == Configuring Tomcat/TomEE
 
-The simplest possible configuration is to reference the Realm with this element in your server.xml:
-
-----
-<Realm className="com.tomitribe.security.MongoRealm" digest="SHA-256"/>
-----
-
-The configuration shown above will simple use the defaults.  It will connect to MongoDB running on localhost:27017 without using authentication. It will also connect to all of the default collections.
-
-For a more complete configuration, here is the full set of options with all of the collection and field names listed out explicitly:
+Coniguration for the Realm in your server.xml:
 
 ----
 <Realm className="com.tomitribe.security.MongoRealm" 
        digest="SHA-256"
-       mongoClientURI="mongodb://localhost/"
+       mongoClientURI="mongodb://<user>:<password>@host:port/database"
        database="security_realm"
        userCollection="user"
        usernameField="username"
@@ -46,13 +59,12 @@ For a more complete configuration, here is the full set of options with all of t
 ----
 
 The syntax of mongoClientURI can be found here: http://api.mongodb.com/java/current/com/mongodb/MongoClientURI.html - through this variable you can configure the MongoRealm to connect to multiple MongoDB instances in a replicaSet.  You can configure timeouts, wait queue timeouts, read preferences (primary or secondary), authentication option for the connection to MongoDB.
-        
+
+_Note - If you chose to not encrypt your password, leave the `digest` field out of the configuration._       
 
 == Design Goals
 
 * Delegate as much configuration as possible to the Mongo Connection URI. If you need to configure timeouts or connect to a replicaSet, you can configure all of this in the connect URL.
-
-* Allow users to configure the database, collection, and field names used to gather credential information.
 
 * Keep it Simple and Stupid (possibly to a fault).  The Realm, as implemented, is a bit chatty with Mongo.  While it could do fancy things like use a ThreadLocal variable to cache the user object throughout the authentication process, I've opted to keep it simple to avoid any unintended security consequences.
 
